@@ -3,8 +3,13 @@ import os
 
 app = Flask(__name__)
 
+# متغير global للموديل
+model = None
+
 @app.route("/predict", methods=["POST"])
 def predict():
+    global model
+
     import numpy as np
     import tensorflow as tf
     from PIL import Image
@@ -36,14 +41,14 @@ def predict():
         else:
             gdown.download(drive_url, model_path, quiet=False)
 
-        return tf.keras.models.load_model(model_path)
+    # تحميل الموديل مرة واحدة فقط
+    if model is None:
+        load_or_update_model()
+        model = tf.keras.models.load_model(model_path)
 
     # تأكد من وجود الصورة
     if 'image' not in request.files:
         return jsonify({"error": "No image provided"}), 400
-
-    # تحميل أو تحديث الموديل
-    model = load_or_update_model()
 
     # تجهيز الصورة
     image = request.files['image']
